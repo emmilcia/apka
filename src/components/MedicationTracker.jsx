@@ -12,7 +12,7 @@ import {
     getDocs,
     writeBatch
 } from 'firebase/firestore';
-import { Plus, Pill, Clock, Calendar as CalendarIcon, Trash2, PlusCircle, ChevronRight, ChevronLeft, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Pill, Clock, Calendar as CalendarIcon, Trash2, PlusCircle, ChevronRight, ChevronLeft, CheckCircle2, Circle, Edit } from 'lucide-react';
 import { format, addDays, startOfDay, isSameDay, eachDayOfInterval } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -29,6 +29,8 @@ export default function MedicationTracker() {
 
     const [isMedModalOpen, setIsMedModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [editingMedId, setEditingMedId] = useState(null);
+    const [editingScheduleId, setEditingScheduleId] = useState(null);
 
     const [newMed, setNewMed] = useState({
         name: '',
@@ -99,15 +101,25 @@ export default function MedicationTracker() {
         e.preventDefault();
         if (!user) return;
         try {
-            await addDoc(collection(db, 'medications'), {
-                ...newMed,
-                userId: user.uid,
-                createdAt: new Date()
-            });
+            if (editingMedId) {
+                // Update existing medication
+                await updateDoc(doc(db, 'medications', editingMedId), {
+                    ...newMed,
+                    updatedAt: new Date()
+                });
+                setEditingMedId(null);
+            } else {
+                // Create new medication
+                await addDoc(collection(db, 'medications'), {
+                    ...newMed,
+                    userId: user.uid,
+                    createdAt: new Date()
+                });
+            }
             setIsMedModalOpen(false);
             setNewMed({ name: '', dosage: '', unit: 'mg', description: '' });
         } catch (err) {
-            console.error("Błąd dodawania leku:", err);
+            console.error("Błąd zapisywania leku:", err);
         }
     };
 
@@ -140,14 +152,38 @@ export default function MedicationTracker() {
         e.preventDefault();
         if (!newSchedule.medId || !user) return;
         try {
-            await addDoc(collection(db, 'scheduledMeds'), {
+            // Ensure duration is a number before saving
+            const scheduleData = {
                 ...newSchedule,
-                userId: user.uid,
-                createdAt: new Date()
-            });
+                duration: newSchedule.duration === '' ? 7 : parseInt(newSchedule.duration) || 7
+            };
+
+            if (editingScheduleId) {
+                // Update existing schedule
+                await updateDoc(doc(db, 'scheduledMeds', editingScheduleId), {
+                    ...scheduleData,
+                    updatedAt: new Date()
+                });
+                setEditingScheduleId(null);
+            } else {
+                // Create new schedule
+                await addDoc(collection(db, 'scheduledMeds'), {
+                    ...scheduleData,
+                    userId: user.uid,
+                    createdAt: new Date()
+                });
+            }
             setIsScheduleModalOpen(false);
+            setNewSchedule({
+                medId: '',
+                startDate: format(new Date(), 'yyyy-MM-dd'),
+                timeOfDay: 'morning',
+                frequency: 'daily',
+                customInterval: 2,
+                duration: 7
+            });
         } catch (err) {
-            console.error("Błąd planowania:", err);
+            console.error("Błąd zapisywania harmonogramu:", err);
         }
     };
 
@@ -166,6 +202,30 @@ export default function MedicationTracker() {
         } catch (err) {
             console.error("Błąd usuwania z harmonogramu:", err);
         }
+    };
+
+    const openEditMed = (med) => {
+        setNewMed({
+            name: med.name,
+            dosage: med.dosage,
+            unit: med.unit,
+            description: med.description || ''
+        });
+        setEditingMedId(med.id);
+        setIsMedModalOpen(true);
+    };
+
+    const openEditSchedule = (schedule) => {
+        setNewSchedule({
+            medId: schedule.medId,
+            startDate: schedule.startDate,
+            timeOfDay: schedule.timeOfDay,
+            frequency: schedule.frequency,
+            customInterval: schedule.customInterval || 2,
+            duration: schedule.duration || 7
+        });
+        setEditingScheduleId(schedule.id);
+        setIsScheduleModalOpen(true);
     };
 
     const toggleTaken = async (day, scheduleId) => {
@@ -258,7 +318,7 @@ export default function MedicationTracker() {
                                                             {taken ? <CheckCircle2 size={14} className="status-icon" /> : <Circle size={14} className="status-icon" />}
                                                             <div className="info">
                                                                 <span className="name">{getMedName(s.medId)}</span>
-                                                                <span className="dosage">{getMedDosage(s.medId)}{getMedUnit(s.medId)}</span>
+
                                                             </div>
                                                         </div>
                                                         <button onClick={() => deleteFromSchedule(s.id)} className="remove-s">×</button>
@@ -289,9 +349,14 @@ export default function MedicationTracker() {
                                 <div className="med-icon">
                                     <Pill size={24} />
                                 </div>
-                                <button onClick={() => deleteMedFromInventory(med.id)} className="delete-med">
-                                    <Trash2 size={16} />
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={() => openEditMed(med)} className="edit-med" title="Edytuj lek">
+                                        <Edit size={16} />
+                                    </button>
+                                    <button onClick={() => deleteMedFromInventory(med.id)} className="delete-med">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                             <div className="tile-body">
                                 <h4>{med.name}</h4>
@@ -312,7 +377,7 @@ export default function MedicationTracker() {
             {isMedModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Dodaj nowy lek do apteczki</h2>
+                        <h2>{editingMedId ? 'Edytuj lek' : 'Dodaj nowy lek do apteczki'}</h2>
                         <form onSubmit={addMedToInventory}>
                             <input
                                 type="text"
@@ -355,7 +420,7 @@ export default function MedicationTracker() {
             {isScheduleModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Zaplanuj przyjmowanie leku</h2>
+                        <h2>{editingScheduleId ? 'Edytuj harmonogram' : 'Zaplanuj zażycie leku'}</h2>
                         <form onSubmit={addToSchedule}>
                             <div className="form-group">
                                 <label>Wybierz lek z apteczki:</label>
@@ -423,9 +488,8 @@ export default function MedicationTracker() {
                                             <span>Przez</span>
                                             <input
                                                 type="number"
-                                                min="1"
                                                 value={newSchedule.duration}
-                                                onChange={e => setNewSchedule({ ...newSchedule, duration: parseInt(e.target.value) || 1 })}
+                                                onChange={e => setNewSchedule({ ...newSchedule, duration: e.target.value === '' ? '' : parseInt(e.target.value) || 1 })}
                                             />
                                             <span>dni</span>
                                         </div>

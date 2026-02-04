@@ -1249,6 +1249,8 @@ select:focus option {
     flex: 1;
     cursor: pointer;
     padding: 2px 0;
+    min-width: 0;
+    /* Critical for flex child truncation */
 }
 
 .scheduled-item-pill.taken .info {
@@ -1269,6 +1271,9 @@ select:focus option {
 .pill-content .info {
     display: flex;
     align-items: center;
+    flex: 1;
+    min-width: 0;
+    /* Allow shrinking below content size */
 }
 
 .scheduled-item-pill .name {
@@ -1276,16 +1281,11 @@ select:focus option {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 80px;
+    flex: 0 1 auto;
+    /* Allow shrink, don't force grow */
 }
 
-.scheduled-item-pill .dosage {
-    color: var(--primary-pink);
-    font-weight: 700;
-    margin-left: 4px;
-    flex-shrink: 0;
-    /* Never cut the dosage */
-}
+
 
 .remove-s {
     background: none;
@@ -1326,7 +1326,7 @@ select:focus option {
 
 .med-tiles {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 1.5rem;
 }
 
@@ -1453,6 +1453,28 @@ select:focus {
     gap: 0.5rem;
     font-size: 0.8rem;
     color: #888;
+}
+
+/* Edit buttons */
+.edit-med,
+.edit-s {
+    background: rgba(236, 72, 153, 0.1);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    color: #ec4899;
+    padding: 0.4rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-med:hover,
+.edit-s:hover {
+    background: rgba(236, 72, 153, 0.2);
+    border-color: rgba(236, 72, 153, 0.5);
+    transform: scale(1.05);
 }
 
 .form-group {
