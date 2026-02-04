@@ -20,9 +20,9 @@ const PRIORITY_LABELS = {
 };
 
 const PRIORITY_COLORS = {
-    high: '#fca5a5',
-    urgent: '#ef4444',
-    low: '#93c5fd'
+    high: 'var(--primary-color)',   // Was #fca5a5 (Pink-ish) -> Theme Primary
+    urgent: '#ef4444',              // Red - Keep red for urgent? Or make it variable? User said "everything pink". Red is not pink.
+    low: '#93c5fd'                  // Blue - Keep as is? Or use theme tertiary?
 };
 
 export default function TodoList() {

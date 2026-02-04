@@ -6,13 +6,19 @@ import Calendar from './components/Calendar.jsx'
 import MedicationTracker from './components/MedicationTracker.jsx'
 import StartupNotifications from './components/StartupNotifications.jsx'
 import Auth from './components/Auth.jsx'
-import { LogOut, User, Sparkles } from 'lucide-react'
+import { LogOut, User, Sparkles, Palette } from 'lucide-react'
 import './index.css'
 
 function App() {
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('todo')
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'pink');
+
+    useEffect(() => {
+        document.body.className = theme === 'blue' ? 'blue-theme' : '';
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     useEffect(() => {
         console.log("Inicjalizacja nasłuchiwania Auth...");
@@ -43,6 +49,7 @@ function App() {
     }, [authLoading]);
 
     const handleLogout = () => signOut(auth);
+    const toggleTheme = () => setTheme(prev => prev === 'pink' ? 'blue' : 'pink');
 
     if (authLoading) {
         return (
@@ -63,15 +70,39 @@ function App() {
 
 
             <header className="app-header">
-                <div className="user-profile">
-                    <div className="user-info">
-                        <User size={16} />
-                        <span>{user.email}</span>
-                    </div>
-                    <button onClick={handleLogout} className="logout-btn" title="Wyloguj">
-                        <LogOut size={18} />
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button
+                        onClick={toggleTheme}
+                        className="theme-toggle-btn"
+                        title={theme === 'pink' ? "Zmień na niebieski" : "Zmień na różowy"}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--primary-color)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s'
+                        }}
+                    >
+                        <Palette size={20} />
                     </button>
+
+                    <div className="user-profile">
+                        <div className="user-info">
+                            <User size={16} />
+                            <span>{user.email}</span>
+                        </div>
+                        <button onClick={handleLogout} className="logout-btn" title="Wyloguj">
+                            <LogOut size={18} />
+                        </button>
+                    </div>
                 </div>
+
                 <nav className="app-nav">
                     <Sparkles className="nav-icon" />
                     <button
@@ -102,7 +133,7 @@ function App() {
             </main>
 
             <footer className="elegant-footer">
-                <p>Made with 💖 by Emilia Dudzik</p>
+                <p>Made with {theme === 'pink' ? '💖' : '💙'} by Emilia Dudzik</p>
             </footer>
         </div>
     )

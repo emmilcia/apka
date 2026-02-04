@@ -39,7 +39,7 @@ export default function Auth() {
                     <div className="auth-logo">
                         <Cat size={40} className="paw-icon" />
                     </div>
-                    <h2>{isLogin ? 'Witaj ponowie! 🐾' : 'Dołącz do nas! 🌸'}</h2>
+                    <h2>{isLogin ? 'Witaj ponowie! 🐾' : 'Dołącz do nas! 💎'}</h2>
                     <p>{isLogin ? 'Zaloguj się, aby zsynchronizować dane' : 'Stwórz konto, aby mieć dostęp wszędzie'}</p>
                 </div>
 
@@ -82,7 +82,7 @@ export default function Auth() {
 
                 <div className="auth-footer">
                     <button onClick={() => setIsLogin(!isLogin)} className="toggle-auth">
-                        {isLogin ? 'Nie masz konta? Zarejestruj się 🌸' : 'Masz już konto? Zaloguj się 🐾'}
+                        {isLogin ? 'Nie masz konta? Zarejestruj się 💎' : 'Masz już konto? Zaloguj się 🐾'}
                     </button>
                 </div>
             </div>

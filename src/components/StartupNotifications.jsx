@@ -153,7 +153,7 @@ export default function StartupNotifications() {
                             <div className="notif-list">
                                 {upcomingTasks.map(t => (
                                     <div key={t.id} className="notif-item">
-                                        <span className="dot" style={{ background: t.priority === 'urgent' ? '#ef4444' : '#ff85b3' }}></span>
+                                        <span className="dot" style={{ background: t.priority === 'urgent' ? '#ef4444' : 'var(--secondary-color)' }}></span>
                                         <div className="notif-info">
                                             <strong>{t.title}</strong>
                                             <span>{format(new Date(t.deadline), 'EEEE, HH:mm', { locale: pl })}</span>
@@ -187,7 +187,7 @@ export default function StartupNotifications() {
                             <div className="notif-list">
                                 {medsToday.map(m => (
                                     <div key={`${m.scheduleId}-${m.timeOfDay}`} className="notif-item">
-                                        <span className="dot" style={{ background: '#ec4899' }}></span>
+                                        <span className="dot" style={{ background: 'var(--primary-color)' }}></span>
                                         <div className="notif-info">
                                             <strong>{m.name}</strong>
                                             <span>

@@ -34,7 +34,7 @@ const CATEGORIES = {
     school: { label: 'Szkoła', color: '#3b82f6' }, // deeper blue
     entertainment: { label: 'Rozrywka', color: '#eab308' }, // deeper yellow/gold
     duties: { label: 'Obowiązki', color: '#f97316' }, // deeper orange
-    holiday: { label: 'Święto', color: '#f43f5e' } // vibrant rose
+    holiday: { label: 'Święto', color: 'var(--secondary-color)' } // theme secondary
 };
 
 const POLISH_HOLIDAYS = {
