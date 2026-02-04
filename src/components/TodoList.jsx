@@ -1,4 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { db, auth } from '../firebase';
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc
+} from 'firebase/firestore';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 
 const PRIORITY_LABELS = {
@@ -25,26 +36,64 @@ export default function TodoList() {
         status: 'todo'
     });
 
-    const handleSaveTask = (e) => {
+    const user = auth.currentUser;
+
+    useEffect(() => {
+        if (!user) return;
+
+        const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const taskList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setTasks(taskList);
+        }, (error) => {
+            console.error("Błąd ładowania zadań:", error);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const handleSaveTask = async (e) => {
         e.preventDefault();
-        if (!newTask.title) return;
+        if (!newTask.title || !user) return;
 
-        if (editingTaskId) {
-            setTasks(tasks.map(t => t.id === editingTaskId ? { ...newTask, id: editingTaskId } : t));
-        } else {
-            setTasks([...tasks, { ...newTask, id: Date.now() }]);
+        try {
+            if (editingTaskId) {
+                const taskRef = doc(db, 'tasks', editingTaskId);
+                await updateDoc(taskRef, newTask);
+            } else {
+                await addDoc(collection(db, 'tasks'), {
+                    ...newTask,
+                    userId: user.uid,
+                    createdAt: new Date()
+                });
+            }
+            closeModal();
+        } catch (err) {
+            console.error("Błąd zapisu:", err);
+            alert("Nie udało się zapisać zadania. Sprawdź konfigurację Firebase.");
         }
-
-        closeModal();
     };
 
-    const deleteTask = (id) => {
-        setTasks(tasks.filter(t => t.id !== id));
+    const deleteTask = async (id) => {
+        try {
+            await deleteDoc(doc(db, 'tasks', id));
+        } catch (err) {
+            console.error("Błąd usuwania:", err);
+        }
     };
 
     const startEditing = (task) => {
         setEditingTaskId(task.id);
-        setNewTask(task);
+        setNewTask({
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            deadline: task.deadline,
+            status: task.status
+        });
         setIsModalOpen(true);
     };
 
@@ -71,11 +120,16 @@ export default function TodoList() {
         e.preventDefault();
         e.currentTarget.classList.remove('drag-over');
         const taskId = e.dataTransfer.getData('taskId');
-        moveTask(parseInt(taskId), newStatus);
+        moveTask(taskId, newStatus);
     };
 
-    const moveTask = (id, newStatus) => {
-        setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    const moveTask = async (id, newStatus) => {
+        try {
+            const taskRef = doc(db, 'tasks', id);
+            await updateDoc(taskRef, { status: newStatus });
+        } catch (err) {
+            console.error("Błąd przesuwania:", err);
+        }
     };
 
     const Column = ({ title, status, tasks }) => (

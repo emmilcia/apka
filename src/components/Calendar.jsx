@@ -1,4 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { db, auth } from '../firebase';
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc
+} from 'firebase/firestore';
 import { ChevronLeft, ChevronRight, Plus, X, Trash2, Edit2 } from 'lucide-react';
 import {
     format,
@@ -20,10 +31,10 @@ import {
 import { pl } from 'date-fns/locale';
 
 const CATEGORIES = {
-    school: { label: 'Szkoła', color: '#93c5fd' }, // blue
-    entertainment: { label: 'Rozrywka', color: '#fde047' }, // yellow
-    duties: { label: 'Obowiązki', color: '#fb923c' }, // orange
-    holiday: { label: 'Święto', color: '#f43f5e' } // rose/red
+    school: { label: 'Szkoła', color: '#3b82f6' }, // deeper blue
+    entertainment: { label: 'Rozrywka', color: '#eab308' }, // deeper yellow/gold
+    duties: { label: 'Obowiązki', color: '#f97316' }, // deeper orange
+    holiday: { label: 'Święto', color: '#f43f5e' } // vibrant rose
 };
 
 const POLISH_HOLIDAYS = {
@@ -54,6 +65,25 @@ export default function Calendar() {
         category: 'school'
     });
 
+    const user = auth.currentUser;
+
+    useEffect(() => {
+        if (!user) return;
+
+        const q = query(collection(db, 'events'), where('userId', '==', user.uid));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const eventList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setEvents(eventList);
+        }, (error) => {
+            console.error("Błąd ładowania wydarzeń:", error);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
     const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
     const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
@@ -68,23 +98,47 @@ export default function Calendar() {
         }
     };
 
-    const handleAddOrEditEvent = (e) => {
+    const handleAddOrEditEvent = async (e) => {
         e.preventDefault();
-        if (editingEventId) {
-            setEvents(events.map(ev => ev.id === editingEventId ? { ...newEvent, id: editingEventId } : ev));
-        } else {
-            setEvents([...events, { ...newEvent, id: Date.now() }]);
+        if (!user) return;
+
+        try {
+            if (editingEventId) {
+                const eventRef = doc(db, 'events', editingEventId);
+                await updateDoc(eventRef, newEvent);
+            } else {
+                await addDoc(collection(db, 'events'), {
+                    ...newEvent,
+                    userId: user.uid,
+                    createdAt: new Date()
+                });
+            }
+            closeModal();
+        } catch (err) {
+            console.error("Błąd zapisu wydarzenia:", err);
+            alert("Nie udało się zapisać wydarzenia.");
         }
-        closeModal();
     };
 
-    const deleteEvent = (id) => {
-        setEvents(events.filter(ev => ev.id !== id));
+    const deleteEvent = async (id) => {
+        try {
+            await deleteDoc(doc(db, 'events', id));
+        } catch (err) {
+            console.error("Błąd usuwania wydarzenia:", err);
+        }
     };
 
     const startEditing = (event) => {
         setEditingEventId(event.id);
-        setNewEvent(event);
+        setNewEvent({
+            title: event.title,
+            description: event.description,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            category: event.category
+        });
         setIsModalOpen(true);
     };
 
@@ -137,6 +191,12 @@ export default function Calendar() {
         const rows = [];
         let days = [];
         const calendarInterval = eachDayOfInterval({ start: startDate, end: endDate });
+
+        // Ensure we always have exactly 42 days (6 full weeks) to fill the grid
+        while (calendarInterval.length < 42) {
+            const lastDay = calendarInterval[calendarInterval.length - 1];
+            calendarInterval.push(addDays(lastDay, 1));
+        }
 
         calendarInterval.forEach((day, i) => {
             const formattedDate = format(day, 'd');

@@ -1,4 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { db, auth } from '../firebase';
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc,
+    getDocs,
+    writeBatch
+} from 'firebase/firestore';
 import { Plus, Pill, Clock, Calendar as CalendarIcon, Trash2, PlusCircle, ChevronRight, ChevronLeft, CheckCircle2, Circle } from 'lucide-react';
 import { format, addDays, startOfDay, isSameDay, eachDayOfInterval } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -12,7 +25,8 @@ const TIME_OF_DAY = [
 export default function MedicationTracker() {
     const [medications, setMedications] = useState([]);
     const [scheduledMeds, setScheduledMeds] = useState([]);
-    const [takenMeds, setTakenMeds] = useState([]); // Array of { dateKey: 'yyyy-MM-dd', scheduleId: id }
+    const [takenMeds, setTakenMeds] = useState([]);
+
     const [isMedModalOpen, setIsMedModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
@@ -32,45 +46,132 @@ export default function MedicationTracker() {
     });
 
     const [startDate, setStartDate] = useState(new Date());
+    const user = auth.currentUser;
+
+    useEffect(() => {
+        if (!user) return;
+
+        // Listen for medications
+        const medQuery = query(collection(db, 'medications'), where('userId', '==', user.uid));
+        const unsubMeds = onSnapshot(medQuery, (snapshot) => {
+            setMedications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, (err) => console.error("Błąd leków:", err));
+
+        // Listen for schedules
+        const scheduleQuery = query(collection(db, 'scheduledMeds'), where('userId', '==', user.uid));
+        const unsubSchedules = onSnapshot(scheduleQuery, (snapshot) => {
+            setScheduledMeds(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, (err) => console.error("Błąd harmonogramu:", err));
+
+        // Listen for taken logs
+        const takenQuery = query(collection(db, 'takenMeds'), where('userId', '==', user.uid));
+        const unsubTaken = onSnapshot(takenQuery, (snapshot) => {
+            setTakenMeds(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, (err) => console.error("Błąd logów zażyć:", err));
+
+        return () => {
+            unsubMeds();
+            unsubSchedules();
+            unsubTaken();
+        };
+    }, [user]);
 
     const days = eachDayOfInterval({
         start: startDate,
         end: addDays(startDate, 6)
     });
 
-    const addMedToInventory = (e) => {
+    const addMedToInventory = async (e) => {
         e.preventDefault();
-        setMedications([...medications, { ...newMed, id: Date.now() }]);
-        setIsMedModalOpen(false);
-        setNewMed({ name: '', dosage: '', unit: 'mg', description: '' });
+        if (!user) return;
+        try {
+            await addDoc(collection(db, 'medications'), {
+                ...newMed,
+                userId: user.uid,
+                createdAt: new Date()
+            });
+            setIsMedModalOpen(false);
+            setNewMed({ name: '', dosage: '', unit: 'mg', description: '' });
+        } catch (err) {
+            console.error("Błąd dodawania leku:", err);
+        }
     };
 
-    const deleteMedFromInventory = (id) => {
-        setMedications(medications.filter(m => m.id !== id));
-        setScheduledMeds(scheduledMeds.filter(s => s.medId !== id));
-        setTakenMeds(takenMeds.filter(t => scheduledMeds.find(s => s.id === t.scheduleId)?.medId !== id));
+    const deleteMedFromInventory = async (id) => {
+        if (!user) return;
+        try {
+            const batch = writeBatch(db);
+
+            // Delete med
+            batch.delete(doc(db, 'medications', id));
+
+            // Find and delete linked schedules
+            const schedulesToDelete = scheduledMeds.filter(s => s.medId === id);
+            for (const s of schedulesToDelete) {
+                batch.delete(doc(db, 'scheduledMeds', s.id));
+                // Find and delete taken logs for these schedules
+                const logsToDelete = takenMeds.filter(t => t.scheduleId === s.id);
+                for (const l of logsToDelete) {
+                    batch.delete(doc(db, 'takenMeds', l.id));
+                }
+            }
+
+            await batch.commit();
+        } catch (err) {
+            console.error("Błąd usuwania leku:", err);
+        }
     };
 
-    const addToSchedule = (e) => {
+    const addToSchedule = async (e) => {
         e.preventDefault();
-        if (!newSchedule.medId) return;
-        setScheduledMeds([...scheduledMeds, { ...newSchedule, id: Date.now() }]);
-        setIsScheduleModalOpen(false);
+        if (!newSchedule.medId || !user) return;
+        try {
+            await addDoc(collection(db, 'scheduledMeds'), {
+                ...newSchedule,
+                userId: user.uid,
+                createdAt: new Date()
+            });
+            setIsScheduleModalOpen(false);
+        } catch (err) {
+            console.error("Błąd planowania:", err);
+        }
     };
 
-    const deleteFromSchedule = (id) => {
-        setScheduledMeds(scheduledMeds.filter(s => s.id !== id));
-        setTakenMeds(takenMeds.filter(t => t.scheduleId !== id));
+    const deleteFromSchedule = async (id) => {
+        if (!user) return;
+        try {
+            const batch = writeBatch(db);
+            batch.delete(doc(db, 'scheduledMeds', id));
+
+            const logsToDelete = takenMeds.filter(t => t.scheduleId === id);
+            for (const l of logsToDelete) {
+                batch.delete(doc(db, 'takenMeds', l.id));
+            }
+
+            await batch.commit();
+        } catch (err) {
+            console.error("Błąd usuwania z harmonogramu:", err);
+        }
     };
 
-    const toggleTaken = (day, scheduleId) => {
+    const toggleTaken = async (day, scheduleId) => {
+        if (!user) return;
         const dateKey = format(day, 'yyyy-MM-dd');
-        const isAlreadyTaken = takenMeds.some(t => t.dateKey === dateKey && t.scheduleId === scheduleId);
+        const existing = takenMeds.find(t => t.dateKey === dateKey && t.scheduleId === scheduleId);
 
-        if (isAlreadyTaken) {
-            setTakenMeds(takenMeds.filter(t => !(t.dateKey === dateKey && t.scheduleId === scheduleId)));
-        } else {
-            setTakenMeds([...takenMeds, { dateKey, scheduleId }]);
+        try {
+            if (existing) {
+                await deleteDoc(doc(db, 'takenMeds', existing.id));
+            } else {
+                await addDoc(collection(db, 'takenMeds'), {
+                    dateKey,
+                    scheduleId,
+                    userId: user.uid,
+                    timestamp: new Date()
+                });
+            }
+        } catch (err) {
+            console.error("Błąd oznaczania jako zażyte:", err);
         }
     };
 
@@ -94,14 +195,15 @@ export default function MedicationTracker() {
             if (s.frequency === 'daily') return true;
             if (s.frequency === 'custom') return diffDays % s.customInterval === 0;
             if (s.frequency === 'weekly') return diffDays % 7 === 0;
+            if (s.frequency === 'once') return diffDays === 0;
 
             return false;
         });
     };
 
-    const getMedName = (id) => medications.find(m => m.id === parseInt(id))?.name || 'Nieznany lek';
-    const getMedDosage = (id) => medications.find(m => m.id === parseInt(id))?.dosage || '';
-    const getMedUnit = (id) => medications.find(m => m.id === parseInt(id))?.unit || 'mg';
+    const getMedName = (id) => medications.find(m => m.id === id)?.name || 'Nieznany lek';
+    const getMedDosage = (id) => medications.find(m => m.id === id)?.dosage || '';
+    const getMedUnit = (id) => medications.find(m => m.id === id)?.unit || 'mg';
 
     return (
         <div className="meds-container">
@@ -283,6 +385,7 @@ export default function MedicationTracker() {
                                         value={newSchedule.frequency}
                                         onChange={e => setNewSchedule({ ...newSchedule, frequency: e.target.value })}
                                     >
+                                        <option value="once">Jednorazowo</option>
                                         <option value="daily">Codziennie</option>
                                         <option value="custom">Co kilka dni...</option>
                                         <option value="weekly">Co tydzień</option>
