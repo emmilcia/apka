@@ -60,16 +60,7 @@ function App() {
     return (
         <div className="app-container">
             <StartupNotifications />
-            {/* Decorative Elements */}
-            <div className="petals-container">
-                {[...Array(12)].map((_, i) => (
-                    <div key={i} className="petal" style={{
-                        left: `${Math.random() * 100}%`,
-                        animationDelay: `${Math.random() * 10}s`,
-                        animationDuration: `${10 + Math.random() * 20}s`
-                    }}>🌸</div>
-                ))}
-            </div>
+
 
             <header className="app-header">
                 <div className="user-profile">
