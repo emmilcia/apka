@@ -41,8 +41,9 @@ export default function MedicationTracker() {
         medId: '',
         startDate: format(new Date(), 'yyyy-MM-dd'),
         timeOfDay: 'morning',
-        frequency: 'daily', // 'daily', 'custom', 'weekly'
-        customInterval: 2
+        frequency: 'daily', // 'daily', 'custom', 'weekly', 'for_days'
+        customInterval: 2,
+        duration: 7 // Default duration for 'for_days'
     });
 
     const [startDate, setStartDate] = useState(new Date());
@@ -76,10 +77,23 @@ export default function MedicationTracker() {
         };
     }, [user]);
 
-    const days = eachDayOfInterval({
-        start: startDate,
-        end: addDays(startDate, 6)
-    });
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const days = isMobile
+        ? [startDate]
+        : eachDayOfInterval({
+            start: startDate,
+            end: addDays(startDate, 6)
+        });
+
+    const handlePrev = () => setStartDate(addDays(startDate, isMobile ? -1 : -7));
+    const handleNext = () => setStartDate(addDays(startDate, isMobile ? 1 : 7));
 
     const addMedToInventory = async (e) => {
         e.preventDefault();
@@ -196,6 +210,7 @@ export default function MedicationTracker() {
             if (s.frequency === 'custom') return diffDays % s.customInterval === 0;
             if (s.frequency === 'weekly') return diffDays % 7 === 0;
             if (s.frequency === 'once') return diffDays === 0;
+            if (s.frequency === 'for_days') return diffDays >= 0 && diffDays < (s.duration || 7);
 
             return false;
         });
@@ -211,11 +226,11 @@ export default function MedicationTracker() {
             <section className="weekly-schedule-section">
                 <div className="section-header">
                     <div className="title-nav">
-                        <h3>Harmonogram Tygodniowy</h3>
+                        <h3>{isMobile ? 'Harmonogram Dzienny' : 'Harmonogram Tygodniowy'}</h3>
                         <div className="week-nav">
-                            <button onClick={() => setStartDate(addDays(startDate, -7))}><ChevronLeft /></button>
+                            <button onClick={handlePrev}><ChevronLeft /></button>
                             <button onClick={() => setStartDate(new Date())}>Dzisiaj</button>
-                            <button onClick={() => setStartDate(addDays(startDate, 7))}><ChevronRight /></button>
+                            <button onClick={handleNext}><ChevronRight /></button>
                         </div>
                     </div>
                     <button className="add-schedule-btn" onClick={() => setIsScheduleModalOpen(true)}>
@@ -389,6 +404,7 @@ export default function MedicationTracker() {
                                         <option value="daily">Codziennie</option>
                                         <option value="custom">Co kilka dni...</option>
                                         <option value="weekly">Co tydzień</option>
+                                        <option value="for_days">Przez X dni</option>
                                     </select>
                                     {newSchedule.frequency === 'custom' && (
                                         <div className="custom-freq-input">
@@ -398,6 +414,18 @@ export default function MedicationTracker() {
                                                 min="1"
                                                 value={newSchedule.customInterval}
                                                 onChange={e => setNewSchedule({ ...newSchedule, customInterval: parseInt(e.target.value) || 1 })}
+                                            />
+                                            <span>dni</span>
+                                        </div>
+                                    )}
+                                    {newSchedule.frequency === 'for_days' && (
+                                        <div className="custom-freq-input">
+                                            <span>Przez</span>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={newSchedule.duration}
+                                                onChange={e => setNewSchedule({ ...newSchedule, duration: parseInt(e.target.value) || 1 })}
                                             />
                                             <span>dni</span>
                                         </div>
