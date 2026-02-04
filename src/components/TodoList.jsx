@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 
 const PRIORITY_LABELS = {
     high: 'Ważny',
@@ -16,6 +16,7 @@ const PRIORITY_COLORS = {
 export default function TodoList() {
     const [tasks, setTasks] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTaskId, setEditingTaskId] = useState(null);
     const [newTask, setNewTask] = useState({
         title: '',
         description: '',
@@ -24,24 +25,66 @@ export default function TodoList() {
         status: 'todo'
     });
 
-    const addTask = (e) => {
+    const handleSaveTask = (e) => {
         e.preventDefault();
         if (!newTask.title) return;
-        setTasks([...tasks, { ...newTask, id: Date.now() }]);
-        setNewTask({ title: '', description: '', priority: 'low', deadline: '', status: 'todo' });
-        setIsModalOpen(false);
-    };
 
-    const moveTask = (id, newStatus) => {
-        setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t));
+        if (editingTaskId) {
+            setTasks(tasks.map(t => t.id === editingTaskId ? { ...newTask, id: editingTaskId } : t));
+        } else {
+            setTasks([...tasks, { ...newTask, id: Date.now() }]);
+        }
+
+        closeModal();
     };
 
     const deleteTask = (id) => {
         setTasks(tasks.filter(t => t.id !== id));
     };
 
+    const startEditing = (task) => {
+        setEditingTaskId(task.id);
+        setNewTask(task);
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setEditingTaskId(null);
+        setNewTask({ title: '', description: '', priority: 'low', deadline: '', status: 'todo' });
+        setIsModalOpen(false);
+    };
+
+    const onDragStart = (e, taskId) => {
+        e.dataTransfer.setData('taskId', taskId);
+    };
+
+    const onDragOver = (e) => {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    };
+
+    const onDragLeave = (e) => {
+        e.currentTarget.classList.remove('drag-over');
+    };
+
+    const onDrop = (e, newStatus) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        const taskId = e.dataTransfer.getData('taskId');
+        moveTask(parseInt(taskId), newStatus);
+    };
+
+    const moveTask = (id, newStatus) => {
+        setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    };
+
     const Column = ({ title, status, tasks }) => (
-        <div className="todo-column">
+        <div
+            className="todo-column"
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={(e) => onDrop(e, status)}
+        >
             <div className="column-header">
                 <h3>{title}</h3>
                 {status === 'todo' && (
@@ -52,29 +95,28 @@ export default function TodoList() {
             </div>
             <div className="task-list">
                 {tasks.filter(t => t.status === status).map(task => (
-                    <div key={task.id} className="task-card" style={{ borderLeft: `4px solid ${PRIORITY_COLORS[task.priority]}` }}>
+                    <div
+                        key={task.id}
+                        className="task-card"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, task.id)}
+                        style={{ borderLeft: `4px solid ${PRIORITY_COLORS[task.priority]}` }}
+                    >
                         <div className="task-header">
                             <h4>{task.title}</h4>
-                            <button onClick={() => deleteTask(task.id)} className="delete-btn">
-                                <Trash2 size={16} />
-                            </button>
+                            <div className="task-actions-btns">
+                                <button onClick={() => startEditing(task)} className="edit-btn">
+                                    <Edit2 size={16} />
+                                </button>
+                                <button onClick={() => deleteTask(task.id)} className="delete-btn">
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                         <p className="task-desc">{task.description}</p>
                         <div className="task-footer">
                             <span className="priority-badge">{PRIORITY_LABELS[task.priority]}</span>
                             {task.deadline && <span className="deadline">{new Date(task.deadline).toLocaleString()}</span>}
-                        </div>
-                        <div className="task-actions">
-                            {status !== 'todo' && (
-                                <button onClick={() => moveTask(task.id, status === 'done' ? 'in-progress' : 'todo')}>
-                                    <ArrowLeft size={16} />
-                                </button>
-                            )}
-                            {status !== 'done' && (
-                                <button onClick={() => moveTask(task.id, status === 'todo' ? 'in-progress' : 'done')}>
-                                    <ArrowRight size={16} />
-                                </button>
-                            )}
                         </div>
                     </div>
                 ))}
@@ -93,8 +135,8 @@ export default function TodoList() {
             {isModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Nowe zadanie</h2>
-                        <form onSubmit={addTask}>
+                        <h2>{editingTaskId ? 'Edytuj zadanie' : 'Nowe zadanie'}</h2>
+                        <form onSubmit={handleSaveTask}>
                             <input
                                 type="text"
                                 placeholder="Nazwa zadania"
@@ -121,8 +163,8 @@ export default function TodoList() {
                                 onChange={e => setNewTask({ ...newTask, deadline: e.target.value })}
                             />
                             <div className="modal-actions">
-                                <button type="button" onClick={() => setIsModalOpen(false)}>Anuluj</button>
-                                <button type="submit" className="submit-btn">Dodaj</button>
+                                <button type="button" onClick={closeModal}>Anuluj</button>
+                                <button type="submit" className="submit-btn">{editingTaskId ? 'Zapisz' : 'Dodaj'}</button>
                             </div>
                         </form>
                     </div>

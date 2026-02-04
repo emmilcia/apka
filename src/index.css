@@ -89,6 +89,13 @@ body {
     flex-direction: column;
     gap: 1rem;
     border: 1px solid var(--border-color);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.todo-column.drag-over {
+    background-color: #fce7f3;
+    border-color: var(--primary-pink);
+    border-style: dashed;
 }
 
 .column-header {
@@ -133,6 +140,17 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    cursor: grab;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.task-card:active {
+    cursor: grabbing;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.12);
 }
 
 .task-header {
@@ -163,31 +181,34 @@ body {
     color: #888;
 }
 
+.task-actions-btns {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-btn,
 .delete-btn {
     background: none;
     border: none;
-    color: #ff9999;
     cursor: pointer;
+    padding: 2px;
+    transition: color 0.2s;
+}
+
+.edit-btn {
+    color: #888;
+}
+
+.edit-btn:hover {
+    color: var(--primary-pink);
+}
+
+.delete-btn {
+    color: #ff9999;
 }
 
 .delete-btn:hover {
     color: #ef4444;
-}
-
-.task-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.task-actions button {
-    background: var(--light-pink);
-    border: none;
-    border-radius: 4px;
-    padding: 4px;
-    cursor: pointer;
-    color: var(--dark-pink);
 }
 
 /* Modal Styles */
@@ -301,20 +322,26 @@ body {
 
 .calendar-body {
     flex: 1;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
 .calendar-row {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    display: contents;
+    /* Ensure cells participate directly in the 7x6 grid */
 }
 
 .calendar-cell {
-    border: 1px solid var(--border-color);
-    padding: 0.5rem;
-    min-height: 80px;
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    padding: 0.25rem;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
     cursor: pointer;
     transition: background 0.2s;
     display: flex;
@@ -332,31 +359,33 @@ body {
 }
 
 .calendar-cell.selected {
-    border: 2px solid var(--primary-pink);
     background: var(--light-pink);
+    box-shadow: inset 0 0 0 2px var(--primary-pink);
 }
 
 .calendar-cell .number {
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
 }
 
 .cell-events {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    overflow: hidden;
+    overflow-y: auto;
+    /* Allow small scroll inside cell if too many tasks */
+    flex: 1;
 }
 
 .event-pill {
     background: var(--primary-pink);
     color: white;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     padding: 2px 4px;
     border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-all;
+    line-height: 1.2;
 }
 
 .calendar-sidebar {
@@ -402,22 +431,74 @@ body {
     border-radius: 8px;
     box-shadow: var(--shadow);
     border-left: 4px solid var(--primary-pink);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.event-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.event-card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.event-card-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.event-card-actions .edit-btn:hover {
+    color: var(--primary-pink);
+}
+
+.event-card-actions .delete-btn:hover {
+    color: #ef4444;
+}
+
+.category-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #888;
 }
 
 .event-card h4 {
-    margin-bottom: 0.25rem;
+    margin: 0;
+    font-size: 1.1rem;
 }
 
 .event-card .time {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--primary-pink);
     font-weight: 600;
+}
+
+.event-card .duration {
+    font-size: 0.75rem;
+    color: #666;
+    font-style: italic;
 }
 
 .event-card .desc {
     font-size: 0.9rem;
     color: #666;
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.empty-msg {
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+    margin-top: 2rem;
 }
 
 .modal-header {
@@ -434,14 +515,44 @@ body {
     color: #888;
 }
 
-.time-inputs {
+.time-inputs,
+.date-inputs {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
 }
 
-.time-inputs input {
+.time-inputs>.form-group,
+.date-inputs>.form-group {
     flex: 1;
+}
+
+/* Holiday Styles */
+.holiday-pill {
+    background-color: var(--dark-pink);
+    font-weight: bold;
+}
+
+.holiday-cell {
+    background-color: #fff1f2;
+    /* extremely light pink/red */
+}
+
+.holiday-cell .number {
+    color: var(--dark-pink);
+}
+
+.holiday-card {
+    border-left-color: var(--dark-pink) !important;
+    background-color: #fff1f2 !important;
+}
+
+.holiday-card h4 {
+    color: var(--dark-pink);
+}
+
+.holiday-card .category-label {
+    color: var(--dark-pink);
 }
 
 /* Medication Tracker Styles */
@@ -458,63 +569,213 @@ body {
     margin-bottom: 1.5rem;
 }
 
-.section-header h3 {
-    color: var(--dark-pink);
-    font-size: 1.5rem;
-}
-
-.current-date {
-    color: #888;
-    text-transform: capitalize;
-}
-
-.schedule-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+.title-nav {
+    display: flex;
+    align-items: center;
     gap: 2rem;
 }
 
-.schedule-slot {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow);
-    border-top: 4px solid var(--primary-pink);
-}
-
-.slot-header {
+.week-nav {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--dark-pink);
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+}
+
+.week-nav button {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.week-nav button:hover {
+    border-color: var(--primary-pink);
+    color: var(--primary-pink);
+}
+
+.add-schedule-btn {
+    background: var(--dark-pink);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.75rem;
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.day-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 140px;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.day-column.today {
+    background: var(--light-pink);
+}
+
+.day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
     padding-bottom: 0.5rem;
 }
 
-.slot-content {
+.day-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--dark-pink);
+}
+
+.day-date {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.day-slots {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
 }
 
-.schedule-item {
+.day-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.slot-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.slot-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 40px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.scheduled-item-pill {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary-pink);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem;
-    background: var(--light-pink);
-    border-radius: 6px;
-    font-size: 0.9rem;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
 }
 
-.med-name {
-    font-weight: 600;
+.scheduled-item-pill.taken {
+    background: #f0fdf4;
+    /* Very light green */
+    border-color: #bbf7d0;
+    border-left-color: #22c55e;
+    opacity: 0.8;
 }
 
-.empty-slot {
+.scheduled-item-pill .pill-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.scheduled-item-pill.taken .info {
+    text-decoration: line-through;
+    color: #166534;
+}
+
+.status-icon {
+    flex-shrink: 0;
     color: #ccc;
-    font-style: italic;
+    transition: color 0.2s;
+}
+
+.scheduled-item-pill.taken .status-icon {
+    color: #22c55e;
+}
+
+.pill-content .info {
+    display: flex;
+    align-items: center;
+}
+
+.scheduled-item-pill .name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80px;
+}
+
+.scheduled-item-pill .dosage {
+    color: var(--primary-pink);
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+.remove-s {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 2px;
+    line-height: 1;
+}
+
+.remove-s:hover {
+    color: #ff9999;
+}
+
+/* Inventory Styles */
+.empty-inventory {
+    grid-column: 1 / -1;
     text-align: center;
+    padding: 3rem;
+    background: var(--light-pink);
+    border-radius: 12px;
+    color: #888;
+    font-style: italic;
 }
 
 .add-med-btn {
@@ -531,7 +792,7 @@ body {
 
 .med-tiles {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
 }
 
@@ -606,6 +867,41 @@ body {
     color: #666;
 }
 
+.dosage-input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dosage-input-group input {
+    flex: 1;
+}
+
+.dosage-input-group select {
+    width: 70px;
+}
+
+.frequency-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.custom-freq-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--light-pink);
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--dark-pink);
+}
+
+.custom-freq-input input {
+    width: 60px;
+    text-align: center;
+}
+
 /* Mobile Responsiveness Queries */
 @media (max-width: 768px) {
     .app-nav {
@@ -663,9 +959,22 @@ body {
     }
 
     /* Medication Tracker Mobile */
-    .schedule-grid {
-        grid-template-columns: 1fr;
+    .title-nav {
+        flex-direction: column;
+        align-items: flex-start;
         gap: 1rem;
+    }
+
+    .weekly-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        overflow-x: visible;
+    }
+
+    .day-column {
+        min-width: 0;
+        border: 1px solid var(--border-color);
     }
 
     .med-tiles {
