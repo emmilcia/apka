@@ -8,7 +8,8 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
-    doc
+    doc,
+    deleteField
 } from 'firebase/firestore';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 
@@ -54,6 +55,28 @@ export default function TodoList() {
 
         return () => unsubscribe();
     }, [user]);
+
+    // Auto-remove completed tasks older than 48 hours
+    useEffect(() => {
+        const cleanupTasks = () => {
+            const now = new Date();
+            const TWO_DAYS_MS = 48 * 60 * 60 * 1000;
+
+            tasks.forEach(task => {
+                if (task.status === 'done' && task.completedAt) {
+                    const completedDate = task.completedAt.toDate ? task.completedAt.toDate() : new Date(task.completedAt);
+                    if (now - completedDate > TWO_DAYS_MS) {
+                        deleteTask(task.id);
+                    }
+                }
+            });
+        };
+
+        const interval = setInterval(cleanupTasks, 60 * 60 * 1000); // Check every hour
+        cleanupTasks(); // Check on mount/update
+
+        return () => clearInterval(interval);
+    }, [tasks]);
 
     const handleSaveTask = async (e) => {
         e.preventDefault();
@@ -126,7 +149,15 @@ export default function TodoList() {
     const moveTask = async (id, newStatus) => {
         try {
             const taskRef = doc(db, 'tasks', id);
-            await updateDoc(taskRef, { status: newStatus });
+            const updateData = { status: newStatus };
+
+            if (newStatus === 'done') {
+                updateData.completedAt = new Date();
+            } else {
+                updateData.completedAt = deleteField();
+            }
+
+            await updateDoc(taskRef, updateData);
         } catch (err) {
             console.error("Błąd przesuwania:", err);
         }
