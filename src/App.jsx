@@ -6,7 +6,7 @@ import Calendar from './components/Calendar.jsx'
 import MedicationTracker from './components/MedicationTracker.jsx'
 import StartupNotifications from './components/StartupNotifications.jsx'
 import Auth from './components/Auth.jsx'
-import { LogOut, User } from 'lucide-react'
+import { LogOut, User, Sparkles } from 'lucide-react'
 import './index.css'
 
 function App() {
@@ -82,7 +82,7 @@ function App() {
                     </button>
                 </div>
                 <nav className="app-nav">
-                    <img src="/paw.png" className="nav-paw" alt="" />
+                    <Sparkles className="nav-icon" />
                     <button
                         className={activeTab === 'calendar' ? 'active' : ''}
                         onClick={() => setActiveTab('calendar')}
@@ -101,7 +101,7 @@ function App() {
                     >
                         <span>Leki</span>
                     </button>
-                    <img src="/paw.png" className="nav-paw" alt="" style={{ transform: 'scaleX(-1)' }} />
+                    <Sparkles className="nav-icon" style={{ transform: 'scaleX(-1)' }} />
                 </nav>
             </header>
             <main className="app-main">

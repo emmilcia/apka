@@ -1791,17 +1791,18 @@ select:focus {
     }
 }
 
-.nav-paw {
-    width: 32px;
-    height: 32px;
-    opacity: 0.4;
-    filter: drop-shadow(0 0 8px var(--primary-pink));
+.nav-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--primary-pink);
     margin: 0 0.5rem;
-    transition: opacity 0.3s;
+    filter: drop-shadow(0 0 5px rgba(255, 77, 148, 0.6));
+    transition: all 0.3s;
 }
 
-.app-nav:hover .nav-paw {
-    opacity: 0.8;
+.app-nav:hover .nav-icon {
+    filter: drop-shadow(0 0 8px var(--primary-pink));
+    transform: scale(1.1);
 }
 
 /* Petals Animation */
@@ -1842,6 +1843,12 @@ select:focus {
     100% {
         transform: translateY(110vh) rotate(720deg) translateX(100px);
         opacity: 0;
+    }
+
+    @media (max-width: 768px) {
+        .petal:nth-child(even) {
+            display: none;
+        }
     }
 }
 
