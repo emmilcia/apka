@@ -5,15 +5,17 @@ import TodoList from './components/TodoList.jsx'
 import Calendar from './components/Calendar.jsx'
 import MedicationTracker from './components/MedicationTracker.jsx'
 import Notes from './components/Notes.jsx'
+import Wallet from './components/Wallet.jsx'
+import Dashboard from './components/Dashboard.jsx'
 import StartupNotifications from './components/StartupNotifications.jsx'
 import Auth from './components/Auth.jsx'
-import { LogOut, User, Sparkles, Palette } from 'lucide-react'
+import { LogOut, User, Sparkles, Palette, Wallet as WalletIcon, LayoutDashboard } from 'lucide-react'
 import './index.css'
 
 function App() {
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('todo')
+    const [activeTab, setActiveTab] = useState('dashboard')
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'pink');
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
     const themeMenuRef = useRef(null);
@@ -162,6 +164,12 @@ function App() {
                     <Sparkles className="nav-icon" />
                     <div className="nav-links">
                         <button
+                            className={activeTab === 'dashboard' ? 'active' : ''}
+                            onClick={() => setActiveTab('dashboard')}
+                        >
+                            <span>Pulpit</span>
+                        </button>
+                        <button
                             className={activeTab === 'calendar' ? 'active' : ''}
                             onClick={() => setActiveTab('calendar')}
                         >
@@ -185,19 +193,32 @@ function App() {
                         >
                             <span>Notatki</span>
                         </button>
+                        <button
+                            className={activeTab === 'wallet' ? 'active' : ''}
+                            onClick={() => setActiveTab('wallet')}
+                        >
+                            <span>Portfel</span>
+                        </button>
                     </div>
                     <Sparkles className="nav-icon" style={{ transform: 'scaleX(-1)' }} />
                 </nav>
             </header>
             <main className="app-main">
+                <div className={`tab-pane ${activeTab === 'dashboard' ? 'active' : ''}`}><Dashboard setActiveTab={setActiveTab} /></div>
                 <div className={`tab-pane ${activeTab === 'calendar' ? 'active' : ''}`}><Calendar /></div>
                 <div className={`tab-pane ${activeTab === 'todo' ? 'active' : ''}`}><TodoList /></div>
                 <div className={`tab-pane ${activeTab === 'meds' ? 'active' : ''}`}><MedicationTracker /></div>
                 <div className={`tab-pane ${activeTab === 'notes' ? 'active' : ''}`}><Notes /></div>
+                <div className={`tab-pane ${activeTab === 'wallet' ? 'active' : ''}`}><Wallet /></div>
             </main>
 
             <footer className="elegant-footer">
-                <p>Made with {theme === 'pink' ? '💖' : '💙'} by Emilia Dudzik</p>
+                <p>Made with {
+                    theme === 'pink' ? '💖' :
+                        theme === 'purple' ? '💜' :
+                            theme === 'light-pink' ? '🩷' :
+                                '💙'
+                } by Emilia Dudzik</p>
             </footer>
         </div>
     )

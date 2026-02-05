@@ -23,7 +23,8 @@ import {
     Save,
     X,
     FileText,
-    ArrowLeft
+    ArrowLeft,
+    Pin
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -58,6 +59,10 @@ export default function Notes() {
                 id: doc.id,
                 ...doc.data()
             })).sort((a, b) => {
+                // Pinned notes first
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+
                 const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || 0;
                 const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || 0;
                 return dateB - dateA;
@@ -150,6 +155,17 @@ export default function Notes() {
             } catch (err) {
                 console.error("Błąd usuwania folderu:", err);
             }
+        }
+    };
+
+    const togglePin = async (note, e) => {
+        e?.stopPropagation();
+        try {
+            await updateDoc(doc(db, 'notes', note.id), {
+                isPinned: !note.isPinned
+            });
+        } catch (err) {
+            console.error("Błąd pinowania:", err);
         }
     };
 
@@ -255,8 +271,14 @@ export default function Notes() {
                         }}
                     >
                         <div className="note-card-header">
-                            <h4>{note.title}</h4>
+                            <h4 className="flex items-center gap-2">
+                                {note.isPinned && <Pin size={14} fill="var(--primary-color)" className="pinned-icon" />}
+                                {note.title}
+                            </h4>
                             <div className="note-actions">
+                                <button onClick={(e) => togglePin(note, e)} className={note.isPinned ? 'active' : ''} title="Przypnij">
+                                    <Pin size={16} />
+                                </button>
                                 <button onClick={(e) => startEditing(note, e)}><Edit3 size={16} /></button>
                                 <button onClick={(e) => deleteNote(note.id, e)}><Trash2 size={16} /></button>
                             </div>
@@ -363,6 +385,8 @@ export default function Notes() {
                     value={noteTitle}
                     onChange={(e) => setNoteTitle(e.target.value)}
                 />
+
+
 
                 <div
                     ref={editorRef}
