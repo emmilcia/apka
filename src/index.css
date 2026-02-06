@@ -44,7 +44,7 @@
     --gradient-end: #1e293b;
     background-image:
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
-        url('/bg-blue.png');
+        url('bg-blue.png');
     background-size: 100%, 300px;
 }
 
@@ -66,7 +66,7 @@
     /* Bunny & Carrot pattern Neon PNG */
     background-image:
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
-        url('/bg-light-pink.png');
+        url('bg-light-pink.png');
     background-size: 300px;
     background-repeat: repeat;
 }
@@ -89,7 +89,7 @@
     /* Bow & Star pattern Neon PNG */
     background-image:
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
-        url('/bg-purple.png');
+        url('bg-purple.png');
     background-size: 300px;
     background-repeat: repeat;
 }
@@ -124,7 +124,7 @@ body {
     background-color: var(--bg-dark);
     background-image:
         linear-gradient(var(--bg-overlay), var(--bg-overlay)),
-        url('/bg-pink.png');
+        url('bg-pink.png');
     background-size: 300px;
     background-repeat: repeat;
     color: var(--text-main);
