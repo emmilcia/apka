@@ -15,27 +15,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+      
       - name: Install dependencies
-        run: npm install
+        shell: bash
+        run: npm install --legacy-peer-deps
+      
       - name: Build
-        run: npm run build
+        shell: bash
+        run: |
+          # Ensure dist is clean if it was committed by mistake
+          rm -rf dist
+          npm run build
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
-  # Deployment job
   deploy:
     environment:
       name: github-pages
