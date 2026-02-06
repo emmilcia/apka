@@ -295,7 +295,6 @@ export default function Calendar() {
                     <div className="modal-content">
                         <div className="modal-header">
                             <h2>{editingEventId ? 'Edytuj wydarzenie' : 'Nowe wydarzenie'}</h2>
-                            <button onClick={closeModal}><X /></button>
                         </div>
                         <form onSubmit={handleAddOrEditEvent}>
                             <input

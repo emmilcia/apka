@@ -1748,9 +1748,10 @@ input[type="number"] {
 
 .modal-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
+    width: 100%;
 }
 
 .modal-header button {
@@ -1765,6 +1766,7 @@ input[type="number"] {
     display: flex;
     align-items: center;
     gap: 1rem;
+    width: 100%;
 }
 
 .time-inputs>.form-group,
@@ -2128,7 +2130,7 @@ input[type="number"] {
 
 /* Modal Redesign */
 .modal-content {
-    background: #1a0b12;
+    background: var(--bg-dark);
     /* Deep base */
     background-image:
         radial-gradient(at 0% 0%, rgba(var(--accent-rgb), 0.1) 0px, transparent 50%),
