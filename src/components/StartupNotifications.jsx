@@ -75,6 +75,16 @@ export default function StartupNotifications() {
         }
     });
 
+    const todayEvents = (events || []).filter(e => {
+        try {
+            const today = startOfDay(new Date());
+            const eventStart = startOfDay(parseISO(e.startDate));
+            return isSameDay(today, eventStart);
+        } catch (err) {
+            return false;
+        }
+    });
+
     const tomorrowEvents = (events || []).filter(e => {
         try {
             const tomorrow = startOfDay(addDays(new Date(), 1));
@@ -126,12 +136,12 @@ export default function StartupNotifications() {
 
     useEffect(() => {
         if (!hasChecked && tasks.length > 0 && (events.length > 0 || scheduledMeds.length > 0)) {
-            if (upcomingTasks.length > 0 || tomorrowEvents.length > 0 || medsToday.length > 0) {
+            if (upcomingTasks.length > 0 || todayEvents.length > 0 || tomorrowEvents.length > 0 || medsToday.length > 0) {
                 setIsOpen(true);
             }
             setHasChecked(true);
         }
-    }, [tasks, events, scheduledMeds, hasChecked, upcomingTasks.length, tomorrowEvents.length, medsToday.length]);
+    }, [tasks, events, scheduledMeds, hasChecked, upcomingTasks.length, todayEvents.length, tomorrowEvents.length, medsToday.length]);
 
     if (!isOpen) return null;
 
@@ -147,6 +157,23 @@ export default function StartupNotifications() {
                 </div>
 
                 <div className="notification-body">
+                    {todayEvents.length > 0 && (
+                        <div className="notif-section">
+                            <h3><Calendar size={18} /> Dzisiejsze wydarzenia</h3>
+                            <div className="notif-list">
+                                {todayEvents.map(e => (
+                                    <div key={e.id} className="notif-item">
+                                        <span className="dot" style={{ background: '#3b82f6' }}></span>
+                                        <div className="notif-info">
+                                            <strong>{e.title}</strong>
+                                            <span>{e.startTime} - {e.endTime}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {upcomingTasks.length > 0 && (
                         <div className="notif-section">
                             <h3><Clock size={18} /> Nadchodzące terminy (48h)</h3>

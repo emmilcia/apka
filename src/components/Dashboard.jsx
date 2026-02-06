@@ -131,7 +131,6 @@ export default function Dashboard({ setActiveTab }) {
             <header className="dashboard-header">
                 <div className="welcome-text">
                     <h1>Witaj ponownie! 👋</h1>
-                    <p>Oto Twój magiczny plan na dziś.</p>
                 </div>
                 <WeatherWidget />
             </header>
