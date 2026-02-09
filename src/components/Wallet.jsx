@@ -637,50 +637,70 @@ export default function Wallet() {
                     <div className="modal-content">
                         <h2>Dodaj transakcję</h2>
                         <form onSubmit={handleAddTransaction}>
-                            <div className="toggle-group">
-                                <button type="button" className={newTrans.category === 'expense' ? 'active' : ''} onClick={() => setNewTrans({ ...newTrans, category: 'expense' })}>Wydatek</button>
-                                <button type="button" className={newTrans.category === 'income' ? 'active' : ''} onClick={() => setNewTrans({ ...newTrans, category: 'income' })}>Przychód</button>
+                            <div className="form-group">
+                                <label>Typ transakcji:</label>
+                                <div className="toggle-group" style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <button type="button" className={newTrans.category === 'expense' ? 'active' : ''} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px' }} onClick={() => setNewTrans({ ...newTrans, category: 'expense' })}>Wydatek</button>
+                                    <button type="button" className={newTrans.category === 'income' ? 'active' : ''} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px' }} onClick={() => setNewTrans({ ...newTrans, category: 'income' })}>Przychód</button>
+                                </div>
                             </div>
-                            <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Kwota"
-                                value={newTrans.amount}
-                                onChange={e => setNewTrans({ ...newTrans, amount: e.target.value })}
-                                required
-                            />
-                            <input
-                                type="text"
-                                placeholder="Opis"
-                                value={newTrans.description}
-                                onChange={e => setNewTrans({ ...newTrans, description: e.target.value })}
-                            />
-                            <select
-                                value={newTrans.type}
-                                onChange={e => setNewTrans({ ...newTrans, type: e.target.value })}
-                            >
-                                <option value="card">Karta</option>
-                                <option value="cash">Gotówka</option>
-                            </select>
 
-                            {newTrans.category === 'expense' && (
-                                <select
-                                    value={newTrans.subCategory}
-                                    onChange={e => setNewTrans({ ...newTrans, subCategory: e.target.value })}
-                                    className="category-select"
-                                >
-                                    <option>Jedzenie</option>
-                                    <option>Transport</option>
-                                    <option>Rozrywka</option>
-                                    <option>Zakupy</option>
-                                    <option>Zdrowie</option>
-                                    <option>Rachunki</option>
-                                    <option>Inne</option>
-                                </select>
-                            )}
+                            <div className="form-group">
+                                <label>Kwota (zł):</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={newTrans.amount}
+                                    onChange={e => setNewTrans({ ...newTrans, amount: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Opis:</label>
+                                <input
+                                    type="text"
+                                    placeholder="np. Zakupy spożywcze, Premia"
+                                    value={newTrans.description}
+                                    onChange={e => setNewTrans({ ...newTrans, description: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Metoda:</label>
+                                    <select
+                                        value={newTrans.type}
+                                        onChange={e => setNewTrans({ ...newTrans, type: e.target.value })}
+                                    >
+                                        <option value="card">Karta</option>
+                                        <option value="cash">Gotówka</option>
+                                    </select>
+                                </div>
+
+                                {newTrans.category === 'expense' && (
+                                    <div className="form-group">
+                                        <label>Kategoria:</label>
+                                        <select
+                                            value={newTrans.subCategory}
+                                            onChange={e => setNewTrans({ ...newTrans, subCategory: e.target.value })}
+                                        >
+                                            <option>Jedzenie</option>
+                                            <option>Transport</option>
+                                            <option>Rozrywka</option>
+                                            <option>Zakupy</option>
+                                            <option>Zdrowie</option>
+                                            <option>Rachunki</option>
+                                            <option>Inne</option>
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="modal-actions">
                                 <button type="button" onClick={() => setIsTransModalOpen(false)}>Anuluj</button>
-                                <button type="submit" className="submit-btn">Dodaj</button>
+                                <button type="submit" className="submit-btn">Dodaj transakcję</button>
                             </div>
                         </form>
                     </div>
@@ -692,23 +712,29 @@ export default function Wallet() {
                     <div className="modal-content">
                         <h2>Skarbonka</h2>
                         <form onSubmit={handleAddPiggy}>
-                            <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Kwota"
-                                value={newPiggy.amount}
-                                onChange={e => setNewPiggy({ ...newPiggy, amount: e.target.value })}
-                                required
-                            />
-                            <input
-                                type="text"
-                                placeholder="Cel / Opis"
-                                value={newPiggy.description}
-                                onChange={e => setNewPiggy({ ...newPiggy, description: e.target.value })}
-                            />
+                            <div className="form-group">
+                                <label>Kwota oszczędności:</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={newPiggy.amount}
+                                    onChange={e => setNewPiggy({ ...newPiggy, amount: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Cel lub opis:</label>
+                                <input
+                                    type="text"
+                                    placeholder="np. Na wakacje, Nowy laptop"
+                                    value={newPiggy.description}
+                                    onChange={e => setNewPiggy({ ...newPiggy, description: e.target.value })}
+                                />
+                            </div>
                             <div className="modal-actions">
                                 <button type="button" onClick={() => setIsPiggyModalOpen(false)}>Anuluj</button>
-                                <button type="submit" className="submit-btn">Wrzuć</button>
+                                <button type="submit" className="submit-btn">Wrzuć do skarbonki</button>
                             </div>
                         </form>
                     </div>
@@ -720,34 +746,46 @@ export default function Wallet() {
                     <div className="modal-content">
                         <h2>Dodaj Pożyczkę / Dług</h2>
                         <form onSubmit={handleAddLoan}>
-                            <div className="toggle-group">
-                                <button type="button" className={newLoan.type === 'borrowed' ? 'active' : ''} onClick={() => setNewLoan({ ...newLoan, type: 'borrowed' })}>Wiszę komuś</button>
-                                <button type="button" className={newLoan.type === 'lent' ? 'active' : ''} onClick={() => setNewLoan({ ...newLoan, type: 'lent' })}>Ktoś wisi mi</button>
+                            <div className="form-group">
+                                <label>Rodzaj pożyczki:</label>
+                                <div className="toggle-group" style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <button type="button" className={newLoan.type === 'borrowed' ? 'active' : ''} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px' }} onClick={() => setNewLoan({ ...newLoan, type: 'borrowed' })}>Wiszę komuś</button>
+                                    <button type="button" className={newLoan.type === 'lent' ? 'active' : ''} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px' }} onClick={() => setNewLoan({ ...newLoan, type: 'lent' })}>Ktoś wisi mi</button>
+                                </div>
                             </div>
-                            <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Kwota"
-                                value={newLoan.amount}
-                                onChange={e => setNewLoan({ ...newLoan, amount: e.target.value })}
-                                required
-                            />
-                            <input
-                                type="text"
-                                placeholder={newLoan.type === 'borrowed' ? "Komu wiszę?" : "Kto mi wisi?"}
-                                value={newLoan.person}
-                                onChange={e => setNewLoan({ ...newLoan, person: e.target.value })}
-                                required
-                            />
-                            <input
-                                type="text"
-                                placeholder="Opis (opcjonalnie)"
-                                value={newLoan.description}
-                                onChange={e => setNewLoan({ ...newLoan, description: e.target.value })}
-                            />
+                            <div className="form-group">
+                                <label>Kwota:</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={newLoan.amount}
+                                    onChange={e => setNewLoan({ ...newLoan, amount: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{newLoan.type === 'borrowed' ? "Komu wiszę?" : "Kto mi wisi?"}</label>
+                                <input
+                                    type="text"
+                                    placeholder="Imię i nazwisko"
+                                    value={newLoan.person}
+                                    onChange={e => setNewLoan({ ...newLoan, person: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Opis (opcjonalnie):</label>
+                                <input
+                                    type="text"
+                                    placeholder="np. Za obiad, Pożyczka na czynsz"
+                                    value={newLoan.description}
+                                    onChange={e => setNewLoan({ ...newLoan, description: e.target.value })}
+                                />
+                            </div>
                             <div className="modal-actions">
                                 <button type="button" onClick={() => setIsLoanModalOpen(false)}>Anuluj</button>
-                                <button type="submit" className="submit-btn">Zapisz</button>
+                                <button type="submit" className="submit-btn">Zapisz pożyczkę</button>
                             </div>
                         </form>
                     </div>

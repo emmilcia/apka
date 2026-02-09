@@ -10,9 +10,11 @@ import {
     ArrowRight,
     PlusCircle,
     Calendar as CalendarIcon,
-    AlertCircle
+    AlertCircle,
+    FileText,
+    Clock
 } from 'lucide-react';
-import { format, startOfDay, addDays } from 'date-fns';
+import { format, startOfDay, addDays, isSameDay, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import WeatherWidget from './WeatherWidget';
 
@@ -21,6 +23,9 @@ export default function Dashboard({ setActiveTab }) {
     const [meds, setMeds] = useState({ items: [], session: '', isNextDay: false });
     const [medList, setMedList] = useState([]);
     const [walletSummary, setWalletSummary] = useState({ total: 0, lastTransactions: [] });
+    const [todayEvents, setTodayEvents] = useState([]);
+    const [lastNote, setLastNote] = useState(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const user = auth.currentUser;
 
     useEffect(() => {
@@ -111,13 +116,51 @@ export default function Dashboard({ setActiveTab }) {
             setWalletSummary({ total, lastTransactions: trans });
         });
 
+        // Fetch Today Events
+        const qEvents = query(collection(db, 'events'), where('userId', '==', user.uid));
+        const unsubEvents = onSnapshot(qEvents, (snapshot) => {
+            const allEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const today = startOfDay(new Date());
+            const filtered = allEvents.filter(e => isSameDay(today, parseISO(e.startDate)));
+            setTodayEvents(filtered);
+        });
+
+        // Fetch Last Edited Note
+        const qNotes = query(
+            collection(db, 'notes'),
+            where('userId', '==', user.uid)
+        );
+        const unsubNotes = onSnapshot(qNotes, (snapshot) => {
+            if (!snapshot.empty) {
+                const notesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort in memory to avoid index requirements for now
+                const latest = notesList.sort((a, b) => {
+                    const dateA = a.updatedAt?.toDate?.() || new Date(a.updatedAt) || a.createdAt?.toDate?.() || new Date(a.createdAt) || 0;
+                    const dateB = b.updatedAt?.toDate?.() || new Date(b.updatedAt) || b.createdAt?.toDate?.() || new Date(b.createdAt) || 0;
+                    return dateB - dateA;
+                })[0];
+                setLastNote(latest);
+            } else {
+                setLastNote(null);
+            }
+        });
+
         return () => {
             unsubMedList();
             unsubTasks();
             unsubMeds();
             unsubWallet();
+            unsubEvents();
+            unsubNotes();
         };
     }, [user]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const getMedName = (id) => medList.find(m => m.id === id)?.name || 'Lek';
 
@@ -136,6 +179,44 @@ export default function Dashboard({ setActiveTab }) {
             </header>
 
             <div className="dashboard-grid full-width-dash">
+                {/* Clock & Date Card */}
+                <div className="dash-card clock-card">
+                    <div className="card-header">
+                        <Clock className="card-icon" style={{ color: 'var(--primary-color)' }} />
+                        <h3>Aktualny czas</h3>
+                    </div>
+                    <div className="card-content clock-display">
+                        <div className="time">{format(currentTime, 'HH:mm:ss')}</div>
+                        <div className="date">{format(currentTime, 'EEEE, d MMMM yyyy', { locale: pl })}</div>
+                    </div>
+                </div>
+
+                {/* Calendar Events Summary */}
+                <div className="dash-card calendar-summary" onClick={() => setActiveTab('calendar')}>
+                    <div className="card-header">
+                        <CalendarIcon className="card-icon" style={{ color: '#3b82f6' }} />
+                        <h3>Twoje dzisiejsze plany</h3>
+                        <ArrowRight size={18} className="arrow" />
+                    </div>
+                    <div className="card-content">
+                        {todayEvents.length > 0 ? (
+                            <ul className="dash-list">
+                                {todayEvents.map(e => (
+                                    <li key={e.id} className="dash-list-item">
+                                        <span className="dot" style={{ background: '#3b82f6' }}></span>
+                                        <div className="title-box">
+                                            <span className="title">{e.title}</span>
+                                            <span className="deadline-mini">{e.startTime}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="empty-msg">Brak planów na dzisiaj. Czas na relaks? 🐾</p>
+                        )}
+                    </div>
+                </div>
+
                 {/* Tasks Summary */}
                 <div className="dash-card tasks-summary" onClick={() => setActiveTab('todo')}>
                     <div className="card-header">
@@ -204,7 +285,30 @@ export default function Dashboard({ setActiveTab }) {
                         )}
                     </div>
                 </div>
+                {/* Last Edited Note Summary */}
+                <div className="dash-card note-summary-card" onClick={() => setActiveTab('notes')}>
+                    <div className="card-header">
+                        <FileText className="card-icon" size={24} style={{ color: 'var(--primary-color)' }} />
+                        <h3>Ostatnia notatka</h3>
+                        <ArrowRight size={18} className="arrow" />
+                    </div>
+                    <div className="card-content">
+                        {lastNote ? (
+                            <div className="dash-note-preview">
+                                <h4>{lastNote.title}</h4>
+                                <div
+                                    className="preview-snippet"
+                                    dangerouslySetInnerHTML={{ __html: (lastNote.content || '').substring(0, 100) + '...' }}
+                                />
+                                <span className="cat-badge">{lastNote.category}</span>
+                            </div>
+                        ) : (
+                            <p className="empty-msg">Nie masz jeszcze żadnych notatek.</p>
+                        )}
+                    </div>
+                </div>
             </div>
+
         </div>
     );
 }

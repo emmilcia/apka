@@ -379,37 +379,48 @@ export default function MedicationTracker() {
                     <div className="modal-content">
                         <h2>{editingMedId ? 'Edytuj lek' : 'Dodaj nowy lek do apteczki'}</h2>
                         <form onSubmit={addMedToInventory}>
-                            <input
-                                type="text"
-                                placeholder="Nazwa leku (np. Apap)"
-                                value={newMed.name}
-                                onChange={e => setNewMed({ ...newMed, name: e.target.value })}
-                                required
-                            />
-                            <div className="dosage-input-group">
+                            <div className="form-group">
+                                <label>Nazwa leku:</label>
                                 <input
                                     type="text"
-                                    placeholder="Ilość (np. 500)"
-                                    value={newMed.dosage}
-                                    onChange={e => setNewMed({ ...newMed, dosage: e.target.value })}
+                                    placeholder="np. Apap, Magneryt"
+                                    value={newMed.name}
+                                    onChange={e => setNewMed({ ...newMed, name: e.target.value })}
                                     required
                                 />
-                                <select
-                                    value={newMed.unit}
-                                    onChange={e => setNewMed({ ...newMed, unit: e.target.value })}
-                                >
-                                    <option value="mg">mg</option>
-                                    <option value="ml">ml</option>
-                                </select>
                             </div>
-                            <textarea
-                                placeholder="Dodatkowe informacje (np. po jedzeniu)"
-                                value={newMed.description}
-                                onChange={e => setNewMed({ ...newMed, description: e.target.value })}
-                            />
+                            <div className="form-group">
+                                <label>Dawkowanie i jednostka:</label>
+                                <div className="dosage-input-group">
+                                    <input
+                                        type="text"
+                                        placeholder="Ilość (np. 500)"
+                                        value={newMed.dosage}
+                                        onChange={e => setNewMed({ ...newMed, dosage: e.target.value })}
+                                        required
+                                    />
+                                    <select
+                                        value={newMed.unit}
+                                        onChange={e => setNewMed({ ...newMed, unit: e.target.value })}
+                                    >
+                                        <option value="mg">mg</option>
+                                        <option value="ml">ml</option>
+                                        <option value="tabl.">tabl.</option>
+                                        <option value="kaps.">kaps.</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Informacje dodatkowe:</label>
+                                <textarea
+                                    placeholder="np. Przyjmować po jedzeniu, popić wodą"
+                                    value={newMed.description}
+                                    onChange={e => setNewMed({ ...newMed, description: e.target.value })}
+                                />
+                            </div>
                             <div className="modal-actions">
                                 <button type="button" onClick={() => setIsMedModalOpen(false)}>Anuluj</button>
-                                <button type="submit" className="submit-btn">Dodaj</button>
+                                <button type="submit" className="submit-btn">{editingMedId ? 'Zapisz zmiany' : 'Dodaj do apteczki'}</button>
                             </div>
                         </form>
                     </div>
@@ -436,33 +447,36 @@ export default function MedicationTracker() {
                                 </select>
                             </div>
 
-                            <div className="form-group">
-                                <label>Początek przyjmowania:</label>
-                                <input
-                                    type="date"
-                                    value={newSchedule.startDate}
-                                    onChange={e => setNewSchedule({ ...newSchedule, startDate: e.target.value })}
-                                    required
-                                />
-                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Początek:</label>
+                                    <input
+                                        type="date"
+                                        value={newSchedule.startDate}
+                                        onChange={e => setNewSchedule({ ...newSchedule, startDate: e.target.value })}
+                                        required
+                                    />
+                                </div>
 
-                            <div className="form-group">
-                                <label>Pora dnia:</label>
-                                <select
-                                    value={newSchedule.timeOfDay}
-                                    onChange={e => setNewSchedule({ ...newSchedule, timeOfDay: e.target.value })}
-                                >
-                                    {TIME_OF_DAY.map(t => (
-                                        <option key={t.id} value={t.id}>{t.label}</option>
-                                    ))}
-                                </select>
+                                <div className="form-group">
+                                    <label>Pora dnia:</label>
+                                    <select
+                                        value={newSchedule.timeOfDay}
+                                        onChange={e => setNewSchedule({ ...newSchedule, timeOfDay: e.target.value })}
+                                    >
+                                        {TIME_OF_DAY.map(t => (
+                                            <option key={t.id} value={t.id}>{t.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="form-group">
                                 <label>Częstotliwość:</label>
-                                <div className="frequency-group">
+                                <div className="frequency-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                                     <select
                                         value={newSchedule.frequency}
+                                        style={{ flex: 1, minWidth: '150px' }}
                                         onChange={e => setNewSchedule({ ...newSchedule, frequency: e.target.value })}
                                     >
                                         <option value="once">Jednorazowo</option>
@@ -472,11 +486,12 @@ export default function MedicationTracker() {
                                         <option value="for_days">Przez X dni</option>
                                     </select>
                                     {newSchedule.frequency === 'custom' && (
-                                        <div className="custom-freq-input">
+                                        <div className="custom-freq-input" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <span>Co</span>
                                             <input
                                                 type="number"
                                                 min="1"
+                                                style={{ width: '70px' }}
                                                 value={newSchedule.customInterval}
                                                 onChange={e => setNewSchedule({ ...newSchedule, customInterval: parseInt(e.target.value) || 1 })}
                                             />
@@ -484,10 +499,11 @@ export default function MedicationTracker() {
                                         </div>
                                     )}
                                     {newSchedule.frequency === 'for_days' && (
-                                        <div className="custom-freq-input">
+                                        <div className="custom-freq-input" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <span>Przez</span>
                                             <input
                                                 type="number"
+                                                style={{ width: '70px' }}
                                                 value={newSchedule.duration}
                                                 onChange={e => setNewSchedule({ ...newSchedule, duration: e.target.value === '' ? '' : parseInt(e.target.value) || 1 })}
                                             />
@@ -500,7 +516,7 @@ export default function MedicationTracker() {
                             <div className="modal-actions">
                                 <button type="button" onClick={() => setIsScheduleModalOpen(false)}>Anuluj</button>
                                 <button type="submit" className="submit-btn" disabled={medications.length === 0}>
-                                    {medications.length === 0 ? 'Najpierw dodaj lek do apteczki' : 'Zaplanuj'}
+                                    {medications.length === 0 ? 'Dodaj lek do apteczki' : (editingScheduleId ? 'Zapisz' : 'Zaplanuj')}
                                 </button>
                             </div>
                         </form>

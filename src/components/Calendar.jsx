@@ -297,13 +297,16 @@ export default function Calendar() {
                             <h2>{editingEventId ? 'Edytuj wydarzenie' : 'Nowe wydarzenie'}</h2>
                         </div>
                         <form onSubmit={handleAddOrEditEvent}>
-                            <input
-                                type="text"
-                                placeholder="Nazwa wydarzenia"
-                                value={newEvent.title}
-                                onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
-                                required
-                            />
+                            <div className="form-group">
+                                <label>Nazwa wydarzenia:</label>
+                                <input
+                                    type="text"
+                                    placeholder="Wpisz nazwę..."
+                                    value={newEvent.title}
+                                    onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
+                                    required
+                                />
+                            </div>
 
                             <div className="form-group">
                                 <label>Kategoria:</label>
@@ -359,14 +362,18 @@ export default function Calendar() {
                                 </div>
                             </div>
 
-                            <textarea
-                                placeholder="Opis"
-                                value={newEvent.description}
-                                onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
-                            />
+                            <div className="form-group">
+                                <label>Opis:</label>
+                                <textarea
+                                    placeholder="Dodaj opis wydarzenia..."
+                                    value={newEvent.description}
+                                    onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
+                                />
+                            </div>
+
                             <div className="modal-actions">
                                 <button type="button" onClick={closeModal}>Anuluj</button>
-                                <button type="submit" className="submit-btn">{editingEventId ? 'Zapisz' : 'Dodaj'}</button>
+                                <button type="submit" className="submit-btn">{editingEventId ? 'Zapisz zmiany' : 'Dodaj wydarzenie'}</button>
                             </div>
                         </form>
                     </div>

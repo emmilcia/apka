@@ -157,20 +157,41 @@ export default function StartupNotifications() {
                 </div>
 
                 <div className="notification-body">
-                    {todayEvents.length > 0 && (
-                        <div className="notif-section">
-                            <h3><Calendar size={18} /> Dzisiejsze wydarzenia</h3>
-                            <div className="notif-list">
-                                {todayEvents.map(e => (
-                                    <div key={e.id} className="notif-item">
-                                        <span className="dot" style={{ background: '#3b82f6' }}></span>
-                                        <div className="notif-info">
-                                            <strong>{e.title}</strong>
-                                            <span>{e.startTime} - {e.endTime}</span>
-                                        </div>
+                    {(todayEvents.length > 0 || tomorrowEvents.length > 0) && (
+                        <div className="notif-events-row">
+                            {todayEvents.length > 0 && (
+                                <div className="notif-section">
+                                    <h3><Calendar size={18} /> Dziś</h3>
+                                    <div className="notif-list">
+                                        {todayEvents.map(e => (
+                                            <div key={e.id} className="notif-item mini">
+                                                <span className="dot" style={{ background: '#3b82f6' }}></span>
+                                                <div className="notif-info">
+                                                    <strong>{e.title}</strong>
+                                                    <span>{e.startTime}</span>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            )}
+
+                            {tomorrowEvents.length > 0 && (
+                                <div className="notif-section">
+                                    <h3><Calendar size={18} /> Jutro</h3>
+                                    <div className="notif-list">
+                                        {tomorrowEvents.map(e => (
+                                            <div key={e.id} className="notif-item mini">
+                                                <span className="dot" style={{ background: '#3b82f6' }}></span>
+                                                <div className="notif-info">
+                                                    <strong>{e.title}</strong>
+                                                    <span>{e.startTime}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -184,23 +205,6 @@ export default function StartupNotifications() {
                                         <div className="notif-info">
                                             <strong>{t.title}</strong>
                                             <span>{format(new Date(t.deadline), 'EEEE, HH:mm', { locale: pl })}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {tomorrowEvents.length > 0 && (
-                        <div className="notif-section">
-                            <h3><Calendar size={18} /> Jutrzejsze wydarzenia</h3>
-                            <div className="notif-list">
-                                {tomorrowEvents.map(e => (
-                                    <div key={e.id} className="notif-item">
-                                        <span className="dot" style={{ background: '#3b82f6' }}></span>
-                                        <div className="notif-info">
-                                            <strong>{e.title}</strong>
-                                            <span>{e.startTime} - {e.endTime}</span>
                                         </div>
                                     </div>
                                 ))}

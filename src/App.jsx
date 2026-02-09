@@ -37,7 +37,7 @@ function App() {
 
     useEffect(() => {
         // Remove all possible theme classes
-        const themeClasses = ['blue-theme', 'light-pink-theme', 'purple-theme'];
+        const themeClasses = ['light-pink-theme'];
         document.body.classList.remove(...themeClasses);
 
         // Add current theme class (if not default pink)
@@ -80,9 +80,7 @@ function App() {
 
     const themes = [
         { id: 'pink', label: 'Różowy (Kotki)', color: '#ff4d94' },
-        { id: 'blue', label: 'Niebieski (Auta)', color: '#3b82f6' },
-        { id: 'light-pink', label: 'Jasny Róż (Króliki)', color: '#ff80b3' },
-        { id: 'purple', label: 'Fioletowy (Kokardki)', color: '#a855f7' }
+        { id: 'light-pink', label: 'Jasny Róż (Króliki)', color: '#ff80b3' }
     ];
 
     if (authLoading) {
@@ -104,7 +102,7 @@ function App() {
 
 
             <header className="app-header">
-                <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="header-top-row">
                     <div className="theme-menu-container" ref={themeMenuRef}>
                         <button
                             onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
@@ -147,6 +145,20 @@ function App() {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    <div className="app-branding" style={{ textAlign: 'center' }}>
+                        <h1 style={{
+                            fontSize: '1.5rem',
+                            fontWeight: '900',
+                            color: 'var(--primary-color)',
+                            letterSpacing: '2px',
+                            textTransform: 'uppercase',
+                            textShadow: '0 0 20px rgba(var(--primary-rgb), 0.4)',
+                            margin: 0
+                        }}>
+                            🐾 Paws & Plans 🐾
+                        </h1>
                     </div>
 
                     <div className="user-profile">

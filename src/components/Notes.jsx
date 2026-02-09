@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { db, auth, storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, auth } from '../firebase';
 import {
     collection,
     query,
@@ -25,9 +24,7 @@ import {
     X,
     FileText,
     ArrowLeft,
-    Pin,
-    Image as ImageIcon,
-    Loader2
+    Pin
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -39,21 +36,16 @@ export default function Notes() {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [editingNote, setEditingNote] = useState(null);
     const [viewingNote, setViewingNote] = useState(null);
-    const [activeFormats, setActiveFormats] = useState({ bold: false, underline: false });
-
-    // Editor State
     const [noteTitle, setNoteTitle] = useState('');
     const [noteCategory, setNoteCategory] = useState('');
-    const [isUploading, setIsUploading] = useState(false);
+    const [activeFormats, setActiveFormats] = useState({ bold: false, underline: false });
     const editorRef = useRef(null);
-    const fileInputRef = useRef(null);
 
     const user = auth.currentUser;
 
     useEffect(() => {
         if (!user) return;
 
-        // Simplified query to avoid index requirements for now
         const q = query(
             collection(db, 'notes'),
             where('userId', '==', user.uid)
@@ -64,7 +56,6 @@ export default function Notes() {
                 id: doc.id,
                 ...doc.data()
             })).sort((a, b) => {
-                // Pinned notes first
                 if (a.isPinned && !b.isPinned) return -1;
                 if (!a.isPinned && b.isPinned) return 1;
 
@@ -73,10 +64,8 @@ export default function Notes() {
                 return dateB - dateA;
             });
 
-            console.log("Pobrano notatki:", notesList.length);
             setNotes(notesList);
 
-            // Extract unique categories
             const cats = [...new Set(notesList.map(n => n.category))].filter(Boolean);
             setCategories(cats);
         }, (err) => {
@@ -98,37 +87,6 @@ export default function Notes() {
         checkActiveFormats();
     };
 
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !user) return;
-
-        if (!file.type.startsWith('image/')) {
-            alert('Proszę wybrać plik graficzny.');
-            return;
-        }
-
-        setIsUploading(true);
-        try {
-            const storageRef = ref(storage, `notes/${user.uid}/${Date.now()}_${file.name}`);
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-
-            // Insert image into the rich text editor
-            if (editorRef.current) {
-                editorRef.current.focus();
-                const imgHtml = `<img src="${downloadURL}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; display: block;" />`;
-                document.execCommand('insertHTML', false, imgHtml);
-                checkActiveFormats();
-            }
-        } catch (error) {
-            console.error("Error uploading image:", error);
-            alert("Błąd podczas przesyłania zdjęcia.");
-        } finally {
-            setIsUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
-
     const handleSaveNote = async () => {
         if (!noteTitle.trim()) {
             alert('Wpisz tytuł notatki');
@@ -141,7 +99,7 @@ export default function Notes() {
 
         const noteData = {
             title: noteTitle,
-            content: editorRef.current.innerHTML,
+            content: editorRef.current?.innerHTML || '',
             category: noteCategory,
             userId: user.uid,
             updatedAt: new Date(),
@@ -187,7 +145,6 @@ export default function Notes() {
                 });
 
                 await batch.commit();
-                console.log(`Usunięto folder: ${category}`);
             } catch (err) {
                 console.error("Błąd usuwania folderu:", err);
             }
@@ -214,7 +171,7 @@ export default function Notes() {
         setTimeout(() => {
             if (editorRef.current) {
                 editorRef.current.innerHTML = note.content;
-                checkActiveFormats(); // Check formats after content is loaded
+                checkActiveFormats();
             }
         }, 100);
     };
@@ -222,14 +179,14 @@ export default function Notes() {
     const resetEditor = () => {
         setEditingNote(null);
         setNoteTitle('');
-        setNoteCategory(selectedCategory || ''); // Pre-fill category if one is selected
+        setNoteCategory(selectedCategory || '');
         if (editorRef.current) editorRef.current.innerHTML = '';
-        setActiveFormats({ bold: false, underline: false }); // Reset formats
+        setActiveFormats({ bold: false, underline: false });
     };
 
     const filteredNotes = selectedCategory
         ? notes.filter(n => n.category === selectedCategory)
-        : notes; // Fallback to all notes if something goes wrong, but UI won't show list without selection
+        : notes;
 
     const renderFolders = () => (
         <div className="notes-folders-grid">
@@ -260,7 +217,7 @@ export default function Notes() {
             <button
                 className="add-inline-btn"
                 onClick={() => {
-                    setSelectedCategory(''); // Clear selected category for new note
+                    setSelectedCategory('');
                     setActiveTab('editor');
                     resetEditor();
                 }}
@@ -275,13 +232,13 @@ export default function Notes() {
         <div className="notes-list-container">
             <div className="notes-list-header">
                 <button onClick={() => {
-                    setSelectedCategory(null); // Clear selected category when going back to folders
+                    setSelectedCategory(null);
                     setActiveTab('folders');
                 }} className="back-btn">
                     <ArrowLeft size={20} />
                     <span>Foldery</span>
                 </button>
-                <h2>{selectedCategory}</h2> {/* Display only the selected category */}
+                <h2>{selectedCategory}</h2>
                 <button
                     className="add-note-action"
                     onClick={() => {
@@ -383,13 +340,6 @@ export default function Notes() {
                     >
                         <Underline size={18} />
                     </button>
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        title="Dodaj zdjęcie"
-                    >
-                        {isUploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
-                    </button>
                 </div>
                 <button onClick={handleSaveNote} className="save-btn">
                     <Save size={18} />
@@ -422,22 +372,12 @@ export default function Notes() {
                     </div>
                 </div>
                 <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageUpload}
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                />
-                <input
                     type="text"
                     className="note-title-input"
                     placeholder="Tytuł notatki..."
                     value={noteTitle}
                     onChange={(e) => setNoteTitle(e.target.value)}
                 />
-
-
-
                 <div
                     ref={editorRef}
                     className="rich-editor"
