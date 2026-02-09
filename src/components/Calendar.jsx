@@ -37,22 +37,27 @@ const CATEGORIES = {
     holiday: { label: 'Święto', color: 'var(--secondary-color)' } // theme secondary
 };
 
-const POLISH_HOLIDAYS = {
-    '01-01': 'Nowy Rok',
-    '01-06': 'Trzech Króli',
-    '05-01': 'Święto Pracy',
-    '05-03': 'Święto Konstytucji 3 Maja',
-    '08-15': 'Wniebowzięcie NMP',
-    '11-01': 'Wszystkich Świętych',
-    '11-11': 'Święto Niepodległości',
-    '12-25': 'Boże Narodzenie (Dzień 1)',
-    '12-26': 'Boże Narodzenie (Dzień 2)'
+// Popularne święta (nie są w oficjalnych API)
+const POPULAR_CELEBRATIONS = {
+    '02-14': 'Walentynki',
+    '05-26': 'Dzień Matki',
+    '06-23': 'Dzień Ojca',
+    '11-30': 'Andrzejki',
+    '12-06': 'Mikołajki',
+    '12-24': 'Wigilia',
+    '12-31': 'Sylwester',
+    '01-21': 'Dzień Babci',
+    '01-22': 'Dzień Dziadka',
+    '10-10': 'Dzień Nauczyciela',
+    '04-01': 'Prima Aprilis',
+    '10-31': 'Halloween'
 };
 
 export default function Calendar() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [events, setEvents] = useState([]);
+    const [publicHolidays, setPublicHolidays] = useState({});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEventId, setEditingEventId] = useState(null);
     const [newEvent, setNewEvent] = useState({
@@ -66,6 +71,45 @@ export default function Calendar() {
     });
 
     const user = auth.currentUser;
+
+    // Pobieranie świąt państwowych z API
+    useEffect(() => {
+        const fetchHolidays = async () => {
+            try {
+                const currentYear = new Date().getFullYear();
+                const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${currentYear}/PL`);
+
+                if (response.ok) {
+                    const apiHolidays = await response.json();
+                    const holidayMap = {};
+
+                    apiHolidays.forEach(holiday => {
+                        const date = new Date(holiday.date);
+                        const key = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                        holidayMap[key] = holiday.localName;
+                    });
+
+                    setPublicHolidays(holidayMap);
+                }
+            } catch (error) {
+                console.error('Błąd pobierania świąt państwowych:', error);
+            }
+        };
+
+        fetchHolidays();
+    }, []);
+
+    // Funkcja zwracająca informacje o święcie
+    const getHolidayInfo = (dayKey) => {
+        if (publicHolidays[dayKey]) {
+            return { name: publicHolidays[dayKey], type: 'public', label: 'Święto państwowe', description: 'Dzień ustawowo wolny od pracy.' };
+        }
+        if (POPULAR_CELEBRATIONS[dayKey]) {
+            return { name: POPULAR_CELEBRATIONS[dayKey], type: 'celebration', label: 'Popularne święto', description: 'Dzień roboczy.' };
+        }
+        return null;
+    };
+
 
     useEffect(() => {
         if (!user) return;
@@ -201,20 +245,20 @@ export default function Calendar() {
         calendarInterval.forEach((day, i) => {
             const formattedDate = format(day, 'd');
             const dayKey = format(day, 'MM-dd');
-            const holidayName = POLISH_HOLIDAYS[dayKey];
+            const holidayInfo = getHolidayInfo(dayKey);
             const dayEvents = events.filter(e => isEventOnDay(e, day));
 
             days.push(
                 <div
                     key={day.toString()}
-                    className={`calendar-cell ${!isSameMonth(day, monthStart) ? 'disabled' : ''} ${isSameDay(day, selectedDate) ? 'selected' : ''} ${holidayName ? 'holiday-cell' : ''}`}
+                    className={`calendar-cell ${!isSameMonth(day, monthStart) ? 'disabled' : ''} ${isSameDay(day, selectedDate) ? 'selected' : ''} ${holidayInfo ? 'holiday-cell' : ''}`}
                     onClick={() => onDateClick(day)}
                 >
                     <span className="number">{formattedDate}</span>
                     <div className="cell-events">
-                        {holidayName && (
-                            <div className="event-pill holiday-pill" title={holidayName}>
-                                {holidayName}
+                        {holidayInfo && (
+                            <div className="event-pill holiday-pill" title={holidayInfo.name}>
+                                {holidayInfo.name}
                             </div>
                         )}
                         {dayEvents.map(ev => (
@@ -258,12 +302,12 @@ export default function Calendar() {
                 <div className="selected-day-events">
                     {(() => {
                         const selectedDayKey = format(selectedDate, 'MM-dd');
-                        const holiday = POLISH_HOLIDAYS[selectedDayKey];
-                        return holiday ? (
+                        const holidayInfo = getHolidayInfo(selectedDayKey);
+                        return holidayInfo ? (
                             <div className="event-card holiday-card">
-                                <h4>{holiday}</h4>
-                                <p className="category-label">Święto Państwowe</p>
-                                <p className="desc">Dzień ustawowo wolny od pracy.</p>
+                                <h4>{holidayInfo.name}</h4>
+                                <p className="category-label">{holidayInfo.label}</p>
+                                <p className="desc">{holidayInfo.description}</p>
                             </div>
                         ) : null;
                     })()}
