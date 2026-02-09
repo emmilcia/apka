@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { db, auth } from '../firebase';
+import { db, auth, storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
     collection,
     query,
@@ -24,7 +25,9 @@ import {
     X,
     FileText,
     ArrowLeft,
-    Pin
+    Pin,
+    Image as ImageIcon,
+    Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -41,7 +44,9 @@ export default function Notes() {
     // Editor State
     const [noteTitle, setNoteTitle] = useState('');
     const [noteCategory, setNoteCategory] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
     const editorRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const user = auth.currentUser;
 
@@ -91,6 +96,37 @@ export default function Notes() {
     const handleFormat = (command) => {
         document.execCommand(command, false, null);
         checkActiveFormats();
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !user) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Proszę wybrać plik graficzny.');
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const storageRef = ref(storage, `notes/${user.uid}/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            // Insert image into the rich text editor
+            if (editorRef.current) {
+                editorRef.current.focus();
+                const imgHtml = `<img src="${downloadURL}" alt="${file.name}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; display: block;" />`;
+                document.execCommand('insertHTML', false, imgHtml);
+                checkActiveFormats();
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            alert("Błąd podczas przesyłania zdjęcia.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
     };
 
     const handleSaveNote = async () => {
@@ -347,6 +383,13 @@ export default function Notes() {
                     >
                         <Underline size={18} />
                     </button>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        title="Dodaj zdjęcie"
+                    >
+                        {isUploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
+                    </button>
                 </div>
                 <button onClick={handleSaveNote} className="save-btn">
                     <Save size={18} />
@@ -378,6 +421,13 @@ export default function Notes() {
                         )}
                     </div>
                 </div>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                />
                 <input
                     type="text"
                     className="note-title-input"
